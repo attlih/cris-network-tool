@@ -7,14 +7,15 @@ import sys
 import pandas as pd
 
 
-def filter_publication_data(publication: Dict) -> Dict:
+def filter_publication_data(publication: Dict, local_unit_id: str) -> Dict:
     """
-    Filter and extract relevant fields from a publication
+    Filter and extract relevant fields from a publication (bundled with local_unit_id)
     """
     return {
         "titleOfPublication": publication["data"].get("titleOfPublication", {}),
         "authorsOfThePublication": publication["data"].get("authorsOfThePublication", {}),
         "yearOfPublication": publication["data"].get("detailedPublicationInformation", {}).get("yearOfPublication", {}),
+        "localUnitId": local_unit_id
     }
 
 
@@ -56,8 +57,8 @@ def fetch_all_publications(start_year: str, end_year: str, local_unit_id: str) -
     print(f"Total publications to fetch: {total_publications}")
 
     # Filter initial data
-    filtered_initial_data = [filter_publication_data(
-        pub) for pub in initial_data.get("data", [])]
+    filtered_initial_data = [filter_publication_data(pub, local_unit_id)
+                             for pub in initial_data.get("data", [])]
     all_publications.extend(filtered_initial_data)
 
     # If there's only one page, we're done
@@ -73,8 +74,8 @@ def fetch_all_publications(start_year: str, end_year: str, local_unit_id: str) -
         try:
             data = fetch_publications(
                 page=page, skip=skip, start_year=start_year, end_year=end_year, local_unit_id=local_unit_id)
-            filtered_data = [filter_publication_data(
-                pub) for pub in data.get("data", [])]
+            filtered_data = [filter_publication_data(pub, local_unit_id)
+                             for pub in data.get("data", [])]
             all_publications.extend(filtered_data)
             time.sleep(1)  # Add a small delay to be nice to the server
 

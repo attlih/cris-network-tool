@@ -156,29 +156,76 @@ def generate_edge_list(input_path, output_path) -> List[Dict]:
     edge_list.to_csv(output_path, index=False)
     print(f"Edge list saved to {output_path}")
 
+def generate_node_list(input_path, output_path):
+    """
+    Generate a node list from publication data.
+    Each node is an author, assigned their most frequent local_unit_id.
+    """
+    from collections import defaultdict, Counter
+
+    data = pd.read_csv(input_path)
+    if 'authors' not in data.columns or 'localUnitId' not in data.columns:
+        raise ValueError("CSV must contain 'authors' and 'localUnitId' columns.")
+
+    author_affiliations = defaultdict(list)
+
+    for _, row in data.iterrows():
+        authors = str(row['authors']).split(';')
+        unit_id = row['localUnitId']
+        for author in authors:
+            clean_author = author.strip()
+            if clean_author:
+                author_affiliations[clean_author].append(unit_id)
+
+    nodes = []
+    for author, units in author_affiliations.items():
+        most_common_unit = Counter(units).most_common(1)[0][0]
+        nodes.append({
+            "id": author,
+            "label": author,
+            "local_unit_id": most_common_unit
+        })
+
+    df_nodes = pd.DataFrame(nodes)
+    df_nodes.to_csv(output_path, index=False)
+    print(f"Node list saved to {output_path}")
+
+
 
 def main():
-    if len(sys.argv) < 4:
-        print("Usage: python fetch_publications.py <start_year> <end_year> <local_unit_id>")
-        sys.exit(1)
+    print("Select mode:")
+    print("1 - Fetch publications for a single local unit")
+    print("2 - Generate edge and node lists from existing publication file")
+    choice = input("Enter 1 or 2: ").strip()
 
-    start_year = sys.argv[1]
-    end_year = sys.argv[2]
-    local_unit_id = sys.argv[3]
+    if choice == "1":
+        # Ask user for inputs instead of relying on command-line arguments
+        start_year = input("Enter start year (e.g. 2025): ").strip()
+        end_year = input("Enter end year (e.g. 2025): ").strip()
+        local_unit_id = input("Enter local unit ID (e.g. 88f6f7f1-e92b-4863-a485-848b130320a7): ").strip()
 
-    print(
-        f"Fetching publications from {start_year} to {end_year} for local unit ID {local_unit_id}...")
-    publications = fetch_all_publications(start_year, end_year, local_unit_id)
-    print(f"Total publications fetched: {len(publications)}")
+        print(f"\nFetching publications from {start_year} to {end_year} for local unit ID {local_unit_id}...")
+        publications = fetch_all_publications(start_year, end_year, local_unit_id)
+        print(f"Total publications fetched: {len(publications)}")
 
-    # Save publications to a CSV file
-    publications_filename = f"publications_{start_year}_{end_year}.csv"
-    save_publications(publications, publications_filename)
+        publications_filename = f"publications_{local_unit_id}_{start_year}_{end_year}.csv"
+        save_publications(publications, publications_filename)
 
-    # Generate and save edge list
-    print("Generating edge list...")
-    edge_list_filename = f"edgelist_{start_year}_{end_year}.csv"
-    generate_edge_list(publications_filename, edge_list_filename)
+    elif choice == "2":
+        publications_filename = "publications_all.csv"
+
+        print(f"Using publication file: {publications_filename}")
+
+        print("Generating edge list...")
+        edge_list_filename = "edgelist_all.csv"
+        generate_edge_list(publications_filename, edge_list_filename)
+
+        print("Generating node list...")
+        node_list_filename = "nodelist_all.csv"
+        generate_node_list(publications_filename, node_list_filename)
+
+    else:
+        print("Invalid choice. Please enter 1 or 2.")
 
 
 if __name__ == "__main__":

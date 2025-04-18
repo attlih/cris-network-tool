@@ -131,55 +131,8 @@ def process_publications_csv(input_filename: str, output_filename: str):
         df.to_csv(output_filename, index=False)
         print(
             f"Successfully updated {len(publication_authors)} publications with author IDs and names in {output_filename}")
-
-        # Always create edge list - pass the dataframe directly
-        create_edge_list(df, output_filename)
     else:
         print("No author information found")
-
-
-def create_edge_list(df, output_filename):
-    """
-    Create an edge list CSV from a publications dataframe or file with author information
-    """
-    print("\nGenerating edge list...")
-
-    # Split the authors column into separate rows
-    data_long = df.assign(
-        local_authors=df['local_authors'].str.split(';')).explode('local_authors')
-
-    # Strip any leading/trailing whitespace from author names
-    data_long['local_authors'] = data_long['local_authors'].str.strip()
-
-    # Find unique authors
-    unique_authors = sorted(data_long['local_authors'].unique())
-    print(f"Found {len(unique_authors)} unique authors")
-
-    # Create an edge list with source and target columns
-    edge_list = data_long.merge(
-        data_long, on=['titleOfPublication', 'yearOfPublication'])
-    edge_list = edge_list[edge_list['local_authors_x']
-                          != edge_list['local_authors_y']]
-    edge_list = edge_list[['local_authors_x', 'local_authors_y',
-                           'titleOfPublication', 'yearOfPublication']].drop_duplicates()
-
-    # Remove double connections by ensuring source is always lexicographically smaller than target
-    edge_list['source'], edge_list['target'] = (
-        edge_list[['local_authors_x', 'local_authors_y']].min(axis=1),
-        edge_list[['local_authors_x', 'local_authors_y']].max(axis=1)
-    )
-    edge_list = edge_list[['source', 'target',
-                           'titleOfPublication', 'yearOfPublication']].drop_duplicates()
-    edge_list.columns = ['source', 'target', 'publication', 'year']
-
-    # Save the edge list to a CSV file
-    edge_list_file_path = f'edge_list_{output_filename}'
-    edge_list.to_csv(edge_list_file_path, index=False)
-
-    print(f"Edge list saved to {edge_list_file_path}")
-    print(f"Total connections: {len(edge_list)}")
-
-    return edge_list
 
 
 def main():
@@ -204,7 +157,6 @@ def main():
     # Confirm operation
     print(f"\nWill process publications from: {input_file}")
     print(f"Results will be saved to: {output_file}")
-    print(f"Edge list will be created automatically after processing")
     print("This may take some time for large datasets.")
 
     process_publications_csv(input_file, output_file)

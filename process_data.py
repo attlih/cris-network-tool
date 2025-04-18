@@ -133,34 +133,3 @@ def process_publications_csv(input_filename: str, output_filename: str):
             f"Successfully updated {len(publication_authors)} publications with author IDs and names in {output_filename}")
     else:
         print("No author information found")
-
-
-def main():
-    print("=== UEF CRIS Author Information & Network Tool ===")
-
-    # Get input file path
-    while True:
-        input_file = input(
-            "Enter the path to the CSV file containing publication IDs: ").strip()
-        if os.path.exists(input_file):
-            break
-        else:
-            print(
-                f"Error: File '{input_file}' not found. Please enter a valid path.")
-
-    # Get output file path
-    output_file = input(
-        f"Enter the output file name (default: updated_{os.path.basename(input_file)}): ").strip()
-    if not output_file:
-        output_file = f"updated_{os.path.basename(input_file)}"
-
-    # Confirm operation
-    print(f"\nWill process publications from: {input_file}")
-    print(f"Results will be saved to: {output_file}")
-    print("This may take some time for large datasets.")
-
-    process_publications_csv(input_file, output_file)
-
-
-if __name__ == "__main__":
-    main()

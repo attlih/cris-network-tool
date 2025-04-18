@@ -5,6 +5,9 @@ from typing import Dict, List
 import time
 import sys
 import pandas as pd
+import os
+
+from process_data import process_publications_csv
 
 UNIT_ID_TO_NAME = {
     # Philosophical Faculty
@@ -171,26 +174,27 @@ def generate_edge_list(input_path, output_path) -> List[Dict]:
     Generate an edge list from the publication data.
     Each edge represents a co-authorship between two authors.
     """
-
+    # Split the authors column into separate rows
     data = pd.read_csv(input_path)
     # Split the authors column into separate rows
     data_long = data.assign(
-        authors=data['authors'].str.split(';')).explode('authors')
+        local_authors=data['local_authors'].str.split(';')).explode('local_authors')
 
     # Strip any leading/trailing whitespace from author names
-    data_long['authors'] = data_long['authors'].str.strip()
+    data_long['local_authors'] = data_long['local_authors'].str.strip()
 
     # Create an edge list with source and target columns
     edge_list = data_long.merge(
         data_long, on=['titleOfPublication', 'yearOfPublication'])
-    edge_list = edge_list[edge_list['authors_x'] != edge_list['authors_y']]
-    edge_list = edge_list[['authors_x', 'authors_y',
+    edge_list = edge_list[edge_list['local_authors_x']
+                          != edge_list['local_authors_y']]
+    edge_list = edge_list[['local_authors_x', 'local_authors_y',
                            'titleOfPublication', 'yearOfPublication']].drop_duplicates()
 
     # Remove double connections by ensuring source is always lexicographically smaller than target
     edge_list['source'], edge_list['target'] = (
-        edge_list[['authors_x', 'authors_y']].min(axis=1),
-        edge_list[['authors_x', 'authors_y']].max(axis=1)
+        edge_list[['local_authors_x', 'local_authors_y']].min(axis=1),
+        edge_list[['local_authors_x', 'local_authors_y']].max(axis=1)
     )
     edge_list = edge_list[['source', 'target',
                            'titleOfPublication', 'yearOfPublication']].drop_duplicates()
@@ -263,16 +267,18 @@ def main():
 
     elif choice == "2":
         publications_filename = "publications_all.csv"
+        fixed_file = "publications_all_fixed.csv"
 
         print(f"Using publication file: {publications_filename}")
 
+        process_publications_csv(publications_filename, fixed_file)
         print("Generating edge list...")
         edge_list_filename = "edgelist_all.csv"
-        generate_edge_list(publications_filename, edge_list_filename)
+        generate_edge_list(fixed_file, edge_list_filename)
 
         print("Generating node list...")
         node_list_filename = "nodelist_all.csv"
-        generate_node_list(publications_filename, node_list_filename)
+        generate_node_list(fixed_file, node_list_filename)
 
     else:
         print("Invalid choice. Please enter 1 or 2.")

@@ -213,14 +213,14 @@ def generate_node_list(input_path, output_path):
     from collections import defaultdict, Counter
 
     data = pd.read_csv(input_path)
-    if 'authors' not in data.columns or 'department' not in data.columns:
+    if 'local_authors' not in data.columns or 'department' not in data.columns:
         raise ValueError(
-            "CSV must contain 'authors' and 'department' columns.")
+            "CSV must contain 'local_authors' and 'department' columns.")
 
     author_affiliations = defaultdict(list)
 
     for _, row in data.iterrows():
-        authors = str(row['authors']).split(';')
+        authors = str(row['local_authors']).split(';')
         department = row['department']
         for author in authors:
             clean_author = author.strip()

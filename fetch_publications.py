@@ -51,20 +51,10 @@ UNIT_ID_TO_NAME = {
     "3d3e782c-8ed7-4d07-af1f-b8f407ea5df9": "University Services"
 }
 
-def filter_publication_data(publication: Dict, local_unit_id: str) -> Dict:
-    """
-    Filter and extract relevant fields from a publication.
-    Replace unit ID with department name if available.
-    """
-    return {
-        "titleOfPublication": publication["data"].get("titleOfPublication", {}),
-        "authorsOfThePublication": publication["data"].get("authorsOfThePublication", {}),
-        "yearOfPublication": publication["data"].get("detailedPublicationInformation", {}).get("yearOfPublication", {}),
-        "department": UNIT_ID_TO_NAME.get(local_unit_id, local_unit_id)  # fallback to ID if name not found
-    }
 
 def filter_publication_data(publication: Dict, local_unit_id: str) -> Dict:
     return {
+        "id": publication["id"],
         "titleOfPublication": publication["data"].get("titleOfPublication", {}),
         "authorsOfThePublication": publication["data"].get("authorsOfThePublication", {}),
         "yearOfPublication": publication["data"].get("detailedPublicationInformation", {}).get("yearOfPublication", {}),
@@ -210,6 +200,7 @@ def generate_edge_list(input_path, output_path) -> List[Dict]:
     edge_list.to_csv(output_path, index=False)
     print(f"Edge list saved to {output_path}")
 
+
 def generate_node_list(input_path, output_path):
     """
     Generate a node list from publication data.
@@ -219,7 +210,8 @@ def generate_node_list(input_path, output_path):
 
     data = pd.read_csv(input_path)
     if 'authors' not in data.columns or 'department' not in data.columns:
-        raise ValueError("CSV must contain 'authors' and 'department' columns.")
+        raise ValueError(
+            "CSV must contain 'authors' and 'department' columns.")
 
     author_affiliations = defaultdict(list)
 
@@ -245,7 +237,6 @@ def generate_node_list(input_path, output_path):
     print(f"Node list saved to {output_path}")
 
 
-
 def main():
     print("Select mode:")
     print("1 - Fetch publications for a single local unit")
@@ -256,13 +247,17 @@ def main():
         # Ask user for inputs instead of relying on command-line arguments
         start_year = input("Enter start year (e.g. 2025): ").strip()
         end_year = input("Enter end year (e.g. 2025): ").strip()
-        local_unit_id = input("Enter local unit ID (e.g. 88f6f7f1-e92b-4863-a485-848b130320a7): ").strip()
+        local_unit_id = input(
+            "Enter local unit ID (e.g. 88f6f7f1-e92b-4863-a485-848b130320a7): ").strip()
 
-        print(f"\nFetching publications from {start_year} to {end_year} for local unit ID {local_unit_id}...")
-        publications = fetch_all_publications(start_year, end_year, local_unit_id)
+        print(
+            f"\nFetching publications from {start_year} to {end_year} for local unit ID {local_unit_id}...")
+        publications = fetch_all_publications(
+            start_year, end_year, local_unit_id)
         print(f"Total publications fetched: {len(publications)}")
 
-        department_name = UNIT_ID_TO_NAME.get(local_unit_id, "UnknownDepartment").replace(" ", "_")
+        department_name = UNIT_ID_TO_NAME.get(
+            local_unit_id, "UnknownDepartment").replace(" ", "_")
         publications_filename = f"publications_{department_name}_{start_year}_{end_year}.csv"
         save_publications(publications, publications_filename)
 

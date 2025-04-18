@@ -6,16 +6,70 @@ import time
 import sys
 import pandas as pd
 
+UNIT_ID_TO_NAME = {
+    # Philosophical Faculty
+    "b5f6c35a-0bc3-4587-a31e-0a98c744eab7": "Administration of the Philosophical Faculty",
+    "02ef482d-78d9-474d-bcb1-7a8c6f858a1d": "School of Humanities",
+    "dc25550a-df97-4873-8cba-a0e141643ce9": "University Teacher Training School of University of Eastern Finland",
+    "02bfe5c2-333f-44eb-b599-902bff03c2bb": "School of Educational Sciences and Psychology",
+    "2d329a68-8abe-417c-8071-d9306940e5c7": "School of Applied Educational Science and Teacher Education",
+    "de7fe9f9-69bd-4a6b-bb99-05ceb760b1dd": "School of Theology",
+
+    # Faculty of Science, Forestry and Technology
+    "8a54b7d0-e14d-4482-9957-fb2ed8ffce18": "Department of Physics and Mathematics",
+    "5cec5645-aa02-4878-ab19-8d41a446b152": "Department of Chemistry and Sustainable Technology",
+    "3733c177-e054-40df-9407-ac302b6add0d": "Administration of the Faculty of Science, Forestry and Technology",
+    "3e7d0d85-4423-4b57-b532-922714578b6c": "School of Forest Sciences",
+    "e4e9aee0-1c6a-4218-b5ce-89ad0a576a2e": "Department of Technical Physics",
+    "88f6f7f1-e92b-4863-a485-848b130320a7": "School of Computing",
+    "15db3714-ba67-4a03-af96-2bf6eafbd7b7": "Department of Environmental and Biological Sciences",
+
+    # Service Centres
+    "c91b0d6d-53bf-4063-a6c4-3980eb32ef35": "Pharmacy of University of Eastern Finland",
+    "09a9fb8c-5d14-41d2-aafa-c3bfff59a568": "Centre for Continuous Learning of the University of Eastern Finland",
+    "3df78c77-1795-4115-a84c-b080ee701f87": "Language Centre",
+    "b8621176-27da-47a9-913f-6892f4297bd0": "Library",
+
+    # Faculty of Health Sciences
+    "0ee2a2bf-a0fd-4d19-be67-9832b043b1e9": "A.I. Virtanen Institute",
+    "9b6ad0a5-2282-4f1f-806f-83b3d249cd70": "School of Pharmacy",
+    "ba1f649a-cf6b-48fa-9b5c-c7d009052af3": "Department of Nursing Sciences",
+    "0625aad6-f1d4-4821-aab9-2400b11b6f81": "School of Medicine",
+    "35b85f11-b99d-410a-b5f4-3fd32b19a662": "Administration of the Faculty of Health Sciences",
+
+    # Faculty of Social Sciences and Business Studies
+    "d05c9db6-0c0e-4469-892a-6b6af55a2a75": "Department of Geographical and Historical Studies",
+    "b013f81c-a354-4921-9294-56726424a9a5": "Karelian Institute",
+    "1d1a7a1f-8ade-4b49-a741-3604bb1372f4": "Business School",
+    "2b5d5783-bce1-457b-ad52-a3fd936601c1": "Law School",
+    "8709d377-e6db-4736-a8f9-cc839570d108": "Department of Health and Social Management",
+    "b1cd5940-91df-469b-a0dd-2c5c0e02158e": "Administration of the Faculty of Social Sciences and Business Studies",
+    "2C12723657-8721-4dfd-8bd9-74294042a794": "Department of Social Sciences",
+
+    # University leadership and services
+    "ecdc1870-14cf-4d27-a3a0-837159a72174": "University of Eastern Finland, leadership",
+    "3d3e782c-8ed7-4d07-af1f-b8f407ea5df9": "University Services"
+}
 
 def filter_publication_data(publication: Dict, local_unit_id: str) -> Dict:
     """
-    Filter and extract relevant fields from a publication (bundled with local_unit_id)
+    Filter and extract relevant fields from a publication.
+    Replace unit ID with department name if available.
     """
     return {
         "titleOfPublication": publication["data"].get("titleOfPublication", {}),
         "authorsOfThePublication": publication["data"].get("authorsOfThePublication", {}),
         "yearOfPublication": publication["data"].get("detailedPublicationInformation", {}).get("yearOfPublication", {}),
-        "localUnitId": local_unit_id
+        "department": UNIT_ID_TO_NAME.get(local_unit_id, local_unit_id)  # fallback to ID if name not found
+    }
+
+def filter_publication_data(publication: Dict, local_unit_id: str) -> Dict:
+    return {
+        "titleOfPublication": publication["data"].get("titleOfPublication", {}),
+        "authorsOfThePublication": publication["data"].get("authorsOfThePublication", {}),
+        "yearOfPublication": publication["data"].get("detailedPublicationInformation", {}).get("yearOfPublication", {}),
+        "localUnitId": local_unit_id,
+        "department": UNIT_ID_TO_NAME.get(local_unit_id, "Unknown Department")
     }
 
 
@@ -159,31 +213,31 @@ def generate_edge_list(input_path, output_path) -> List[Dict]:
 def generate_node_list(input_path, output_path):
     """
     Generate a node list from publication data.
-    Each node is an author, assigned their most frequent local_unit_id.
+    Each node is an author, assigned their most frequent department.
     """
     from collections import defaultdict, Counter
 
     data = pd.read_csv(input_path)
-    if 'authors' not in data.columns or 'localUnitId' not in data.columns:
-        raise ValueError("CSV must contain 'authors' and 'localUnitId' columns.")
+    if 'authors' not in data.columns or 'department' not in data.columns:
+        raise ValueError("CSV must contain 'authors' and 'department' columns.")
 
     author_affiliations = defaultdict(list)
 
     for _, row in data.iterrows():
         authors = str(row['authors']).split(';')
-        unit_id = row['localUnitId']
+        department = row['department']
         for author in authors:
             clean_author = author.strip()
             if clean_author:
-                author_affiliations[clean_author].append(unit_id)
+                author_affiliations[clean_author].append(department)
 
     nodes = []
-    for author, units in author_affiliations.items():
-        most_common_unit = Counter(units).most_common(1)[0][0]
+    for author, departments in author_affiliations.items():
+        most_common_dept = Counter(departments).most_common(1)[0][0]
         nodes.append({
             "id": author,
             "label": author,
-            "local_unit_id": most_common_unit
+            "department": most_common_dept
         })
 
     df_nodes = pd.DataFrame(nodes)
@@ -208,7 +262,8 @@ def main():
         publications = fetch_all_publications(start_year, end_year, local_unit_id)
         print(f"Total publications fetched: {len(publications)}")
 
-        publications_filename = f"publications_{local_unit_id}_{start_year}_{end_year}.csv"
+        department_name = UNIT_ID_TO_NAME.get(local_unit_id, "UnknownDepartment").replace(" ", "_")
+        publications_filename = f"publications_{department_name}_{start_year}_{end_year}.csv"
         save_publications(publications, publications_filename)
 
     elif choice == "2":

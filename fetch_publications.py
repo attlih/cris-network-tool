@@ -44,7 +44,7 @@ UNIT_ID_TO_NAME = {
     "2b5d5783-bce1-457b-ad52-a3fd936601c1": "Law School",
     "8709d377-e6db-4736-a8f9-cc839570d108": "Department of Health and Social Management",
     "b1cd5940-91df-469b-a0dd-2c5c0e02158e": "Administration of the Faculty of Social Sciences and Business Studies",
-    "2C12723657-8721-4dfd-8bd9-74294042a794": "Department of Social Sciences",
+    "12723657-8721-4dfd-8bd9-74294042a794": "Department of Social Sciences",
 
     # University leadership and services
     "ecdc1870-14cf-4d27-a3a0-837159a72174": "University of Eastern Finland, leadership",
